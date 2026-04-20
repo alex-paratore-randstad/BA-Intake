@@ -1,0 +1,63 @@
+:root {
+  /* Randstad Brand Colors */
+  --color-primary: #255CA9;
+  --color-accent: #BAD808;
+  --color-surface: #F9F9F9;
+  --color-on-surface: #1A1C1C;
+  --color-on-surface-variant: #3E4850;
+  --color-outline: #E2E2E2;
+  
+  /* Status Colors */
+  --color-error: #E00F0F;
+  --color-warning: #E9A204;
+  --color-success: #257F56;
+  
+  /* System Colors (derived from blueprint) */
+  --color-surface-container: #EEEEEE;
+  --color-surface-container-low: #F3F3F3;
+  --color-surface-container-high: #E8E8E8;
+  --color-surface-container-lowest: #FFFFFF;
+  
+  /* Spacing & Borders */
+  --radius-default: 8px;
+  --radius-full: 9999px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Shadows (Blueprint requested low shadow/flat) */
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Source Sans Pro', sans-serif;
+  background-color: var(--color-surface-container-low);
+  color: var(--color-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 14px;
+}

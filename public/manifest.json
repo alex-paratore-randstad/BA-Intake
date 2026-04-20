@@ -1,0 +1,10 @@
+{
+  "name": "BA Intake Portal",
+  "version": "1.0.0",
+  "description": "Business Analysis Intake Portal for Analytical Atelier",
+  "id": "ba-intake-portal",
+  "proxyId": "ba-intake-portal-proxy",
+  "data": [],
+  "mapping": {},
+  "dependencies": []
+}
