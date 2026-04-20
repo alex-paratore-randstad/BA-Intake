@@ -22,7 +22,7 @@
   padding: 24px;
   z-index: 40;
   display: flex;
-  flex-col: column;
+  flex-direction: column; /* Fixed: flex-col was invalid */
   gap: 32px;
 }
 
@@ -44,29 +44,32 @@
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
 .navItem {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
+  padding: 12px 16px;
   border-radius: var(--radius-default);
   color: var(--color-on-surface-variant);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
 }
 
 .navItem:hover {
   background-color: var(--color-surface-container-low);
-  transform: translateX(4px);
 }
 
 .navItemActive {
-  background-color: var(--color-primary);
+  background-color: var(--color-primary); /* Flat color, no gradient */
   color: white;
 }
 
@@ -81,24 +84,25 @@
   font-size: 12px;
   color: var(--color-on-surface-variant);
   opacity: 0.7;
+  margin-top: 4px;
 }
 
 .startBtn {
   margin-top: auto;
-  padding: 12px;
-  background: linear-gradient(135deg, var(--color-primary), #00A1E1);
+  padding: 14px;
+  background-color: var(--color-primary); /* Fixed: removed gradient */
   color: white;
-  border-radius: 12px;
+  border-radius: var(--radius-default);
   font-weight: 600;
   font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 12px rgba(37, 92, 169, 0.2);
   transition: all 0.2s;
+  box-shadow: none; /* Removed shadow for minimalist brand look */
 }
 
-.startBtn:active {
-  transform: scale(0.98);
+.startBtn:hover {
+  filter: brightness(1.1);
 }

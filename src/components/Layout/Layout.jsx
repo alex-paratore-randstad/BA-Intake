@@ -3,11 +3,8 @@ import styles from './Layout.module.css';
 
 const Sidebar = ({ currentView, setView }) => {
   const menuItems = [
-    { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
     { id: 'intake', icon: 'assignment_add', label: 'Active Intake' },
-    { id: 'checklist', icon: 'fact_check', label: 'Checklist' },
     { id: 'admin', icon: 'admin_panel_settings', label: 'Admin Panel' },
-    { id: 'archives', icon: 'inventory_2', label: 'Archives' },
   ];
 
   return (

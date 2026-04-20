@@ -1,5 +1,5 @@
 :root {
-  /* Randstad Brand Colors */
+  /* Randstad Brand Colors - Strictly Flat, No Gradients */
   --color-primary: #255CA9;
   --color-accent: #BAD808;
   --color-surface: #F9F9F9;
@@ -7,29 +7,31 @@
   --color-on-surface-variant: #3E4850;
   --color-outline: #E2E2E2;
   
-  /* Status Colors */
-  --color-error: #E00F0F;
-  --color-warning: #E9A204;
-  --color-success: #257F56;
+  /* Status Indicators (Brand Specific) */
+  --color-error: #E00F0F;      /* High Risk */
+  --color-warning: #E9A204;    /* Medium Risk */
+  --color-success: #257F56;    /* Low Risk */
   
-  /* System Colors (derived from blueprint) */
+  /* UI Context Colors */
   --color-surface-container: #EEEEEE;
   --color-surface-container-low: #F3F3F3;
   --color-surface-container-high: #E8E8E8;
   --color-surface-container-lowest: #FFFFFF;
   
-  /* Spacing & Borders */
-  --radius-default: 8px;
+  /* Data Visualization Palette (from guide) */
+  --color-data-1: #255CA9;
+  --color-data-2: #BAD808;
+  --color-data-3: #007C82;
+  --color-data-4: #B2CFF2;
+  
+  /* Layout Constants */
+  --radius-default: 8px; /* Standardize on 8px */
   --radius-full: 9999px;
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
-  
-  /* Shadows (Blueprint requested low shadow/flat) */
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 8px rgba(0,0,0,0.08);
 }
 
 * {
@@ -55,9 +57,17 @@ button {
   cursor: pointer;
   border: none;
   font-family: inherit;
+  transition: opacity 0.2s;
+}
+
+button:active {
+  opacity: 0.8;
 }
 
 input, textarea, select {
   font-family: inherit;
   font-size: 14px;
 }
+
+/* Date Format Requirement: DD Month YYYY */
+/* Currency Requirement: Always include currency code (e.g., USD $100) */

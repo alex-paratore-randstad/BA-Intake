@@ -3,21 +3,49 @@ import styles from './IntakeForm.module.css';
 import { useIntake } from '../../context/IntakeContext';
 
 const IntakeForm = () => {
-  const { questions, currentIntake, updateAnswer, updateDescription, performSignOff } = useIntake();
+  const { questions, forms, currentIntake, selectForm, updateAnswer, updateDescription, performSignOff } = useIntake();
   const [step, setStep] = useState(0);
 
-  const steps = [
-    { label: 'Intake', sections: ['BA Name', 'Request Information'] },
-    { label: 'Discovery', sections: ['I. Discovery & Existing Solutions'] },
-    { label: 'Feasibility', sections: ['II. Feasibility Assessment'] },
-    { label: 'Requirements', sections: ['III. Defining Specifics (Requirements)', 'IV. Sizing the Problem/Impact'] },
-    { label: 'Sign-off', sections: ['V. Sign-off and Jira Tagging'] }
-  ];
+  // If no form is selected, show the selection dropdown
+  if (!currentIntake.formId) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <h2 className={styles.sectionTitle}>Start New Intake</h2>
+          <p className={styles.instruction} style={{ borderLeft: 'none', paddingLeft: 0, marginBottom: '24px' }}>
+            Please select the appropriate intake form to begin the process.
+          </p>
+          
+          <div className={styles.questionItem}>
+            <label className={styles.questionLabel}>Intake Type</label>
+            <select 
+              className={styles.input}
+              onChange={(e) => selectForm(e.target.value)}
+              defaultValue=""
+            >
+              <option value="" disabled>Choose a form...</option>
+              {forms.map(f => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const currentQuestions = questions.filter(q => steps[step].sections.includes(q.section));
+  // Get the selected form object
+  const selectedForm = forms.find(f => f.id === currentIntake.formId);
+  // Filter questions that belong to this form
+  const formQuestions = questions.filter(q => selectedForm.questionIds.includes(q.id));
+
+  // Determine sections based on filtered questions
+  const sections = [...new Set(formQuestions.map(q => q.section))];
+  
+  const currentQuestions = formQuestions.filter(q => q.section === sections[step]);
 
   const handleNext = () => {
-    if (step < steps.length - 1) setStep(step + 1);
+    if (step < sections.length - 1) setStep(step + 1);
   };
 
   const handleBack = () => {
@@ -25,24 +53,27 @@ const IntakeForm = () => {
   };
 
   const handleSignOff = () => {
-    const name = currentIntake.answers['ba-name'] || 'Analytical Analyst';
+    const name = currentIntake.answers['ba-name'] || 'Business Analyst';
     performSignOff(name);
-    alert(`Signed off by ${name} at ${new Date().toLocaleString()}`);
   };
 
   return (
     <div className={styles.container}>
+      {/* Step Indicator based on sections in the selected form */}
       <div className={styles.stepIndicator}>
-        {steps.map((s, i) => (
+        {sections.map((s, i) => (
           <div key={i} className={`${styles.step} ${step >= i ? styles.stepActive : ''}`}>
             <div className={styles.stepCircle}>{i + 1}</div>
-            <span className={styles.stepLabel}>{s.label}</span>
+            <span className={styles.stepLabel}>{s}</span>
           </div>
         ))}
       </div>
 
       <div className={styles.card}>
-        <h2 className={styles.sectionTitle}>{steps[step].label} Assessment</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h2 className={styles.sectionTitle}>{sections[step]}</h2>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-primary)' }}>FORM: {selectedForm.name}</span>
+        </div>
         
         {currentQuestions.map(q => (
           <div key={q.id} className={styles.questionItem}>
@@ -77,7 +108,7 @@ const IntakeForm = () => {
               </div>
             )}
 
-            {/* Description field for every item as requested */}
+            {/* Description field for every item */}
             <textarea 
               className={styles.textarea}
               placeholder="Add additional details/description..."
@@ -86,6 +117,16 @@ const IntakeForm = () => {
             />
           </div>
         ))}
+
+        {/* Digital Sign-off Display */}
+        {sections[step].includes('Sign-off') && currentIntake.signOff.timestamp && (
+          <div style={{ marginTop: '24px', padding: '16px', backgroundColor: 'var(--color-surface-container-low)', borderRadius: '8px', borderLeft: '4px solid var(--color-success)' }}>
+             <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-success)' }}>Digitally Signed Off</p>
+             <p style={{ fontSize: '12px', color: 'var(--color-on-surface-variant)' }}>
+               Signed by {currentIntake.signOff.name} on {currentIntake.signOff.timestamp}
+             </p>
+          </div>
+        )}
       </div>
 
       <div className={styles.footer}>
@@ -98,13 +139,18 @@ const IntakeForm = () => {
           Back
         </button>
         
-        {step < steps.length - 1 ? (
+        {step < sections.length - 1 ? (
           <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleNext}>
-            Continue to {steps[step + 1].label}
+            Continue
           </button>
         ) : (
-          <button className={`${styles.btn} ${styles.btnPrimary}`} style={{ backgroundColor: 'var(--color-success)' }} onClick={handleSignOff}>
-            Complete & Sign-off
+          <button 
+            className={`${styles.btn} ${styles.btnPrimary}`} 
+            style={{ backgroundColor: 'var(--color-success)' }} 
+            onClick={handleSignOff}
+            disabled={!!currentIntake.signOff.timestamp}
+          >
+            {currentIntake.signOff.timestamp ? 'Intake Complete' : 'Complete & Sign-off'}
           </button>
         )}
       </div>
