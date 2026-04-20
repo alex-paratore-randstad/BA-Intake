@@ -19,25 +19,40 @@ export const IntakeProvider = ({ children }) => {
   const [forms, setForms] = useState([]);
 
   useEffect(() => {
-    // Initializing with seed data
     setQuestions(checklistSeed);
     setForms(initialForms);
   }, []);
 
-  const updateAnswer = (questionId, value) => {
-    setCurrentIntake(prev => ({
-      ...prev,
-      answers: { ...prev.answers, [questionId]: value }
-    }));
+  // Questions CRUD
+  const addQuestion = (q) => {
+    const newId = q.id || `q-${Date.now()}`;
+    setQuestions(prev => [...prev, { ...q, id: newId, version: 1, isActive: true }]);
   };
 
-  const updateDescription = (questionId, text) => {
-    setCurrentIntake(prev => ({
-      ...prev,
-      descriptions: { ...prev.descriptions, [questionId]: text }
-    }));
+  const updateQuestion = (id, updatedFields) => {
+    setQuestions(prev => {
+      // Find current max version for this ID
+      const versions = prev.filter(q => q.id === id);
+      const current = versions.sort((a, b) => b.version - a.version)[0];
+      
+      // Create a NEW version instead of overwriting
+      const newVersion = {
+        ...current,
+        ...updatedFields,
+        version: current.version + 1,
+        isActive: true
+      };
+      
+      return [...prev, newVersion];
+    });
   };
 
+  const deleteQuestion = (id) => {
+    // Soft delete: set all versions of this ID to inactive
+    setQuestions(prev => prev.map(q => q.id === id ? { ...q, isActive: false } : q));
+  };
+
+  // Forms CRUD
   const selectForm = (formId) => {
     setCurrentIntake(prev => ({
       ...prev,
@@ -50,6 +65,17 @@ export const IntakeProvider = ({ children }) => {
 
   const addForm = (newForm) => {
     setForms(prev => [...prev, { ...newForm, id: `form-${Date.now()}` }]);
+  };
+
+  const updateForm = (id, updatedForm) => {
+    setForms(prev => prev.map(f => f.id === id ? { ...f, ...updatedForm } : f));
+  };
+
+  const updateAnswer = (questionId, value) => {
+    setCurrentIntake(prev => ({
+      ...prev,
+      answers: { ...prev.answers, [questionId]: value }
+    }));
   };
 
   const performSignOff = (name) => {
@@ -68,10 +94,13 @@ export const IntakeProvider = ({ children }) => {
       currentIntake, 
       questions, 
       forms,
+      addQuestion,
+      updateQuestion,
+      deleteQuestion,
       selectForm,
       addForm,
+      updateForm,
       updateAnswer, 
-      updateDescription, 
       performSignOff,
       setCurrentIntake
     }}>

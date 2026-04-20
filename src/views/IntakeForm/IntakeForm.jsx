@@ -36,8 +36,11 @@ const IntakeForm = () => {
 
   // Get the selected form object
   const selectedForm = forms.find(f => f.id === currentIntake.formId);
-  // Filter questions that belong to this form
-  const formQuestions = questions.filter(q => selectedForm.questionIds.includes(q.id));
+  
+  // Filter questions that belong to this form by matching both ID and Version
+  const formQuestions = selectedForm.questions.map(fq => {
+    return questions.find(q => q.id === fq.id && q.version === fq.version);
+  }).filter(Boolean);
 
   // Determine sections based on filtered questions
   const sections = [...new Set(formQuestions.map(q => q.section))];
@@ -107,14 +110,6 @@ const IntakeForm = () => {
                 <p className={styles.warningText}>Attention Required: {q.instruction}</p>
               </div>
             )}
-
-            {/* Description field for every item */}
-            <textarea 
-              className={styles.textarea}
-              placeholder="Add additional details/description..."
-              value={currentIntake.descriptions[q.id] || ''}
-              onChange={(e) => updateDescription(q.id, e.target.value)}
-            />
           </div>
         ))}
 

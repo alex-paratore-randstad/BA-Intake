@@ -4,6 +4,36 @@
   "description": "Business Analysis Intake Portal for Analytical Atelier",
   "id": "ba-intake-portal",
   "proxyId": "ba-intake-portal-proxy",
+  "collections": [
+    {
+      "name": "Config_Questions",
+      "syncEnabled": true,
+      "schema": {
+        "columns": [
+          { "name": "id", "type": "STRING" },
+          { "name": "version", "type": "LONG" },
+          { "name": "section", "type": "STRING" },
+          { "name": "item", "type": "STRING" },
+          { "name": "type", "type": "STRING" },
+          { "name": "instruction", "type": "STRING" },
+          { "name": "warningTrigger", "type": "STRING" },
+          { "name": "isActive", "type": "BOOLEAN" }
+        ]
+      }
+    },
+    {
+      "name": "Config_Forms",
+      "syncEnabled": true,
+      "schema": {
+        "columns": [
+          { "name": "id", "type": "STRING" },
+          { "name": "name", "type": "STRING" },
+          { "name": "description", "type": "STRING" },
+          { "name": "questions", "type": "STRING" } 
+        ]
+      }
+    }
+  ],
   "data": [],
   "mapping": {},
   "dependencies": []
