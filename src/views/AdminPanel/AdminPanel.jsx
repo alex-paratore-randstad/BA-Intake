@@ -361,8 +361,10 @@ const AdminPanel = () => {
                 value={questionData.type}
                 onChange={(e) => setQuestionData({...questionData, type: e.target.value})}
               >
-                <option value="Check">Checkbox</option>
-                <option value="Input Required">Text Input</option>
+                <option value="Checkbox">Checkbox</option>
+                <option value="Text">Text</option>
+                <option value="Dropdown">Dropdown</option>
+                <option value="Number">Number</option>
               </select>
             </div>
             <div>

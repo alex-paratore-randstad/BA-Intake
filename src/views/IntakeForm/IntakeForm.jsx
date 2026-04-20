@@ -3,7 +3,7 @@ import styles from './IntakeForm.module.css';
 import { useIntake } from '../../context/IntakeContext';
 
 const IntakeForm = () => {
-  const { questions, forms, currentIntake, selectForm, updateAnswer, updateDescription, performSignOff } = useIntake();
+  const { questions, forms, currentIntake, selectForm, updateAnswer, performSignOff } = useIntake();
   const [step, setStep] = useState(0);
 
   // If no form is selected, show the selection dropdown
@@ -34,17 +34,12 @@ const IntakeForm = () => {
     );
   }
 
-  // Get the selected form object
   const selectedForm = forms.find(f => f.id === currentIntake.formId);
-  
-  // Filter questions that belong to this form by matching both ID and Version
   const formQuestions = selectedForm.questions.map(fq => {
     return questions.find(q => q.id === fq.id && q.version === fq.version);
   }).filter(Boolean);
 
-  // Determine sections based on filtered questions
   const sections = [...new Set(formQuestions.map(q => q.section))];
-  
   const currentQuestions = formQuestions.filter(q => q.section === sections[step]);
 
   const handleNext = () => {
@@ -60,9 +55,60 @@ const IntakeForm = () => {
     performSignOff(name);
   };
 
+  const renderInput = (q) => {
+    switch (q.type) {
+      case 'Text':
+        return (
+          <input 
+            type="text" 
+            className={styles.input} 
+            placeholder="Type your answer..."
+            value={currentIntake.answers[q.id] || ''}
+            onChange={(e) => updateAnswer(q.id, e.target.value)}
+          />
+        );
+      case 'Number':
+        return (
+          <input 
+            type="number" 
+            className={styles.input} 
+            placeholder="0"
+            value={currentIntake.answers[q.id] || ''}
+            onChange={(e) => updateAnswer(q.id, e.target.value)}
+          />
+        );
+      case 'Dropdown':
+        return (
+          <select 
+            className={styles.input}
+            value={currentIntake.answers[q.id] || ''}
+            onChange={(e) => updateAnswer(q.id, e.target.value)}
+          >
+            <option value="">Select option...</option>
+            <option value="Standard">Standard</option>
+            <option value="Custom">Custom</option>
+            <option value="Global">Global</option>
+            <option value="Regional">Regional</option>
+          </select>
+        );
+      case 'Checkbox':
+      default:
+        return (
+          <div 
+            className={styles.checkboxContainer}
+            onClick={() => updateAnswer(q.id, currentIntake.answers[q.id] === 'Yes' ? 'No' : 'Yes')}
+          >
+            <span className="material-symbols-outlined" style={{ color: currentIntake.answers[q.id] === 'Yes' ? 'var(--color-primary)' : 'var(--color-outline)' }}>
+              {currentIntake.answers[q.id] === 'Yes' ? 'check_box' : 'check_box_outline_blank'}
+            </span>
+            <span style={{ fontSize: '14px' }}>Confirm Action</span>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className={styles.container}>
-      {/* Step Indicator based on sections in the selected form */}
       <div className={styles.stepIndicator}>
         {sections.map((s, i) => (
           <div key={i} className={`${styles.step} ${step >= i ? styles.stepActive : ''}`}>
@@ -83,28 +129,10 @@ const IntakeForm = () => {
             <label className={styles.questionLabel}>{q.item}</label>
             {q.instruction && <p className={styles.instruction}>{q.instruction}</p>}
             
-            {q.type === 'Input Required' || q.type === '[Client Name]' || q.type === 'Beeline' ? (
-              <input 
-                type="text" 
-                className={styles.input} 
-                placeholder={q.type}
-                value={currentIntake.answers[q.id] || ''}
-                onChange={(e) => updateAnswer(q.id, e.target.value)}
-              />
-            ) : (
-              <div 
-                className={styles.checkboxContainer}
-                onClick={() => updateAnswer(q.id, currentIntake.answers[q.id] === 'Yes' ? 'No' : 'Yes')}
-              >
-                <span className="material-symbols-outlined" style={{ color: currentIntake.answers[q.id] === 'Yes' ? 'var(--color-primary)' : 'var(--color-outline)' }}>
-                  {currentIntake.answers[q.id] === 'Yes' ? 'check_box' : 'check_box_outline_blank'}
-                </span>
-                <span style={{ fontSize: '14px' }}>Confirm Action</span>
-              </div>
-            )}
+            {renderInput(q)}
 
             {/* Warning Banner Logic */}
-            {q.warningTrigger && currentIntake.answers[q.id] === q.warningTrigger && (
+            {q.warningTrigger !== 'None' && currentIntake.answers[q.id] === q.warningTrigger && (
               <div className={styles.warningBanner}>
                 <span className="material-symbols-outlined" style={{ color: 'var(--color-warning)' }}>warning</span>
                 <p className={styles.warningText}>Attention Required: {q.instruction}</p>
