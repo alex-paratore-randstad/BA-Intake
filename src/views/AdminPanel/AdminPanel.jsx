@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useIntake } from '../../context/IntakeContext';
 
 const AdminPanel = () => {
-  const { questions, forms, addForm, updateForm, addQuestion, updateQuestion, deleteQuestion } = useIntake();
+  const { questions, forms, addForm, updateForm, addQuestion, updateQuestion, deleteQuestion, batchAddQuestions } = useIntake();
   const [activeTab, setActiveTab] = useState('forms'); // 'forms', 'questions', or 'create'
   const [editingForm, setEditingForm] = useState(null);
   const [editingQuestion, setEditingQuestion] = useState(null);
@@ -63,6 +63,51 @@ const AdminPanel = () => {
     setQuestionData({ item: '', section: '', type: 'Check', instruction: '', warningTrigger: '' });
     setEditingQuestion(null);
     setActiveTab('questions');
+  };
+
+  const handleCsvUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target.result;
+      const lines = content.split('\n');
+      const parsedQuestions = [];
+
+      // Skip header if it exists
+      const startIndex = lines[0].toLowerCase().includes('section') ? 1 : 0;
+
+      for (let i = startIndex; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+
+        // Basic CSV parser for quoted fields
+        const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+        const matches = lines[i].match(/(".*?"|[^",\r\n]*)(?:,|$)/g);
+        
+        if (!matches) continue;
+
+        const cols = matches.map(m => m.replace(/^"|"|,$/g, '').trim());
+        
+        if (cols.length < 2) continue;
+
+        parsedQuestions.push({
+          section: cols[0] || 'Uncategorized',
+          item: cols[1] || 'Untitled Item',
+          type: cols[2]?.includes('[Input') ? 'Input Required' : 'Check',
+          adminNote: cols[3] || '',
+          instruction: cols[4] || '',
+          warningTrigger: cols[2]?.includes('Yes') ? 'Yes' : ''
+        });
+      }
+
+      if (parsedQuestions.length > 0) {
+        batchAddQuestions(parsedQuestions);
+        alert(`Successfully imported ${parsedQuestions.length} questions.`);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = null; // Reset for next upload
   };
 
   return (
@@ -126,15 +171,29 @@ const AdminPanel = () => {
 
       {activeTab === 'questions' && (
         <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid var(--color-outline)', overflow: 'hidden' }}>
-          <div style={{ padding: '24px', borderBottom: '1px solid var(--color-outline)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '24px', borderBottom: '1px solid var(--color-outline)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 700 }}>Master Question Bank</h2>
-            <button 
-              className="btn" 
-              style={{ backgroundColor: 'var(--color-primary)', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '14px' }}
-              onClick={() => { setQuestionData({ item: '', section: '', type: 'Check', instruction: '', warningTrigger: '' }); setEditingQuestion(null); setActiveTab('edit_question'); }}
-            >
-              + Add Question
-            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <label style={{ 
+                backgroundColor: 'var(--color-surface-container-high)', 
+                color: 'var(--color-on-surface)', 
+                padding: '8px 16px', 
+                borderRadius: '8px', 
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}>
+                Import CSV
+                <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleCsvUpload} />
+              </label>
+              <button 
+                className="btn" 
+                style={{ backgroundColor: 'var(--color-primary)', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '14px' }}
+                onClick={() => { setQuestionData({ item: '', section: '', type: 'Check', instruction: '', warningTrigger: '' }); setEditingQuestion(null); setActiveTab('edit_question'); }}
+              >
+                + Add Question
+              </button>
+            </div>
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead style={{ backgroundColor: 'var(--color-surface-container-low)', textAlign: 'left', fontSize: '12px' }}>
@@ -142,7 +201,7 @@ const AdminPanel = () => {
                 <th style={{ padding: '16px' }}>ITEM</th>
                 <th style={{ padding: '16px' }}>SECTION</th>
                 <th style={{ padding: '16px' }}>VERSION</th>
-                <th style={{ padding: '16px' }}>STATUS</th>
+                <th style={{ padding: '16px' }}>NOTES</th>
                 <th style={{ padding: '16px', textAlign: 'right' }}>ACTIONS</th>
               </tr>
             </thead>
@@ -156,9 +215,11 @@ const AdminPanel = () => {
                     <td style={{ padding: '16px' }}>{q.section}</td>
                     <td style={{ padding: '16px' }}>v{q.version}</td>
                     <td style={{ padding: '16px' }}>
-                      <span style={{ color: q.isActive ? 'var(--color-success)' : 'var(--color-on-surface-variant)', fontWeight: 600 }}>
-                        {q.isActive ? 'Active' : 'Archived'}
-                      </span>
+                      {q.adminNote ? (
+                        <span title={q.adminNote} style={{ cursor: 'help', color: 'var(--color-primary)', fontSize: '12px', fontWeight: 600 }}>
+                          View Note
+                        </span>
+                      ) : '-'}
                     </td>
                     <td style={{ padding: '16px', textAlign: 'right' }}>
                       <button 

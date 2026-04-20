@@ -39,9 +39,6 @@ const TopBar = () => {
   return (
     <header className={styles.header}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-        <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--color-primary)' }}>
-          Analytical Atelier BA
-        </span>
       </div>
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

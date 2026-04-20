@@ -26,7 +26,23 @@ export const IntakeProvider = ({ children }) => {
   // Questions CRUD
   const addQuestion = (q) => {
     const newId = q.id || `q-${Date.now()}`;
-    setQuestions(prev => [...prev, { ...q, id: newId, version: 1, isActive: true }]);
+    setQuestions(prev => [...prev, { ...q, id: newId, version: 1, isActive: true, adminNote: q.adminNote || '' }]);
+  };
+
+  const batchAddQuestions = (newQuestions) => {
+    setQuestions(prev => {
+      const existingItems = new Set(prev.map(q => q.item.toLowerCase()));
+      const toAdd = newQuestions
+        .filter(q => !existingItems.has(q.item.toLowerCase()))
+        .map((q, idx) => ({
+          ...q,
+          id: `q-csv-${Date.now()}-${idx}`,
+          version: 1,
+          isActive: true
+        }));
+      
+      return [...prev, ...toAdd];
+    });
   };
 
   const updateQuestion = (id, updatedFields) => {
