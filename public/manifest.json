@@ -17,7 +17,9 @@
           { "name": "type", "type": "STRING" },
           { "name": "instruction", "type": "STRING" },
           { "name": "warningTrigger", "type": "STRING" },
-          { "name": "isActive", "type": "BOOLEAN" }
+          { "name": "isActive", "type": "BOOLEAN" },
+          { "name": "options", "type": "STRING" },
+          { "name": "isRequired", "type": "BOOLEAN" }
         ]
       }
     },

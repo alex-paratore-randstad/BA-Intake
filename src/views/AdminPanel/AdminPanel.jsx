@@ -8,7 +8,7 @@ const AdminPanel = () => {
   const [editingQuestion, setEditingQuestion] = useState(null);
   
   const [formData, setFormData] = useState({ name: '', description: '', questions: [] });
-  const [questionData, setQuestionData] = useState({ item: '', section: '', type: 'Check', instruction: '', warningTrigger: '' });
+  const [questionData, setQuestionData] = useState({ item: '', section: '', type: 'Checkbox', instruction: '', warningTrigger: '', isRequired: false, options: [] });
 
   // Filter only active questions for selection
   const activeQuestions = questions.filter(q => q.isActive);
@@ -48,6 +48,18 @@ const AdminPanel = () => {
     setActiveTab('forms');
   };
 
+  const moveQuestion = (index, direction) => {
+    setFormData(prev => {
+      const newQuestions = [...prev.questions];
+      if (direction === 'up' && index > 0) {
+        [newQuestions[index - 1], newQuestions[index]] = [newQuestions[index], newQuestions[index - 1]];
+      } else if (direction === 'down' && index < newQuestions.length - 1) {
+        [newQuestions[index + 1], newQuestions[index]] = [newQuestions[index], newQuestions[index + 1]];
+      }
+      return { ...prev, questions: newQuestions };
+    });
+  };
+
   const handleSaveQuestion = () => {
     if (!questionData.item || !questionData.section) {
       alert('Item and Section are required.');
@@ -60,7 +72,7 @@ const AdminPanel = () => {
       addQuestion(questionData);
     }
 
-    setQuestionData({ item: '', section: '', type: 'Check', instruction: '', warningTrigger: '' });
+    setQuestionData({ item: '', section: '', type: 'Checkbox', instruction: '', warningTrigger: '', isRequired: false, options: [] });
     setEditingQuestion(null);
     setActiveTab('questions');
   };
@@ -189,7 +201,7 @@ const AdminPanel = () => {
               <button 
                 className="btn" 
                 style={{ backgroundColor: 'var(--color-primary)', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '14px' }}
-                onClick={() => { setQuestionData({ item: '', section: '', type: 'Check', instruction: '', warningTrigger: '' }); setEditingQuestion(null); setActiveTab('edit_question'); }}
+                onClick={() => { setQuestionData({ item: '', section: '', type: 'Checkbox', instruction: '', warningTrigger: '', isRequired: false, options: [] }); setEditingQuestion(null); setActiveTab('edit_question'); }}
               >
                 + Add Question
               </button>
@@ -292,10 +304,32 @@ const AdminPanel = () => {
                       {isSelected ? 'check_circle' : 'radio_button_unchecked'}
                     </span>
                     <div>
-                      <p style={{ fontSize: '13px', fontWeight: 600 }}>{q.item}</p>
+                      <p style={{ fontSize: '13px', fontWeight: 600 }}>
+                        {q.item} {q.isRequired && <span style={{ color: 'var(--color-error)' }}>*</span>}
+                      </p>
                       <p style={{ fontSize: '10px', color: 'var(--color-on-surface-variant)' }}>v{currentVersionInForm || q.version} • {q.section}</p>
                     </div>
                   </div>
+                  
+                  {isSelected && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span 
+                        className="material-symbols-outlined" 
+                        style={{ fontSize: '16px', cursor: 'pointer', color: 'var(--color-on-surface-variant)' }}
+                        onClick={(e) => { e.stopPropagation(); moveQuestion(formData.questions.findIndex(fq => fq.id === q.id), 'up'); }}
+                      >
+                        keyboard_arrow_up
+                      </span>
+                      <span 
+                        className="material-symbols-outlined" 
+                        style={{ fontSize: '16px', cursor: 'pointer', color: 'var(--color-on-surface-variant)' }}
+                        onClick={(e) => { e.stopPropagation(); moveQuestion(formData.questions.findIndex(fq => fq.id === q.id), 'down'); }}
+                      >
+                        keyboard_arrow_down
+                      </span>
+                    </div>
+                  )}
+
                   {needsUpgrade && (
                     <button 
                       onClick={() => setFormData(prev => ({
@@ -353,7 +387,7 @@ const AdminPanel = () => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Type</label>
               <select 
@@ -365,19 +399,64 @@ const AdminPanel = () => {
                 <option value="Text">Text</option>
                 <option value="Dropdown">Dropdown</option>
                 <option value="Number">Number</option>
+                <option value="Date">Date</option>
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Warning Trigger (Yes/No)</label>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Warning Trigger</label>
               <input 
                 type="text" 
-                placeholder="e.g. Yes" 
+                placeholder="e.g. Yes or None" 
                 style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-outline)' }}
                 value={questionData.warningTrigger}
                 onChange={(e) => setQuestionData({...questionData, warningTrigger: e.target.value})}
               />
             </div>
           </div>
+
+          <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <input 
+              type="checkbox" 
+              checked={questionData.isRequired}
+              onChange={(e) => setQuestionData({...questionData, isRequired: e.target.checked})}
+              style={{ width: '18px', height: '18px' }}
+            />
+            <label style={{ fontSize: '14px', fontWeight: 600 }}>Mark as Required Field</label>
+          </div>
+
+          {questionData.type === 'Dropdown' && (
+            <div style={{ marginBottom: '32px', padding: '16px', backgroundColor: 'var(--color-surface-container-low)', borderRadius: '8px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '12px' }}>Dropdown Options</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                {questionData.options.map((opt, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text"
+                      value={opt}
+                      onChange={(e) => {
+                        const newOpts = [...questionData.options];
+                        newOpts[idx] = e.target.value;
+                        setQuestionData({...questionData, options: newOpts});
+                      }}
+                      style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid var(--color-outline)' }}
+                    />
+                    <button 
+                      onClick={() => setQuestionData({...questionData, options: questionData.options.filter((_, i) => i !== idx)})}
+                      style={{ padding: '8px', color: 'var(--color-error)' }}
+                    >
+                      <span className="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button 
+                onClick={() => setQuestionData({...questionData, options: [...questionData.options, 'New Option']})}
+                style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-primary)' }}
+              >
+                + Add Option
+              </button>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '16px' }}>
             <button onClick={handleSaveQuestion} style={{ flex: 1, backgroundColor: 'var(--color-primary)', color: 'white', padding: '14px', borderRadius: '8px', fontWeight: 700 }}>Save Question</button>

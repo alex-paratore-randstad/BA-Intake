@@ -5,6 +5,7 @@ import { useIntake } from '../../context/IntakeContext';
 const IntakeForm = () => {
   const { questions, forms, currentIntake, selectForm, updateAnswer, performSignOff } = useIntake();
   const [step, setStep] = useState(0);
+  const [showErrors, setShowErrors] = useState(false);
 
   // If no form is selected, show the selection dropdown
   if (!currentIntake.formId) {
@@ -42,15 +43,28 @@ const IntakeForm = () => {
   const sections = [...new Set(formQuestions.map(q => q.section))];
   const currentQuestions = formQuestions.filter(q => q.section === sections[step]);
 
+  const validateCurrentStep = () => {
+    const missing = currentQuestions.filter(q => q.isRequired && !currentIntake.answers[q.id]);
+    if (missing.length > 0) {
+      setShowErrors(true);
+      return false;
+    }
+    setShowErrors(false);
+    return true;
+  };
+
   const handleNext = () => {
+    if (!validateCurrentStep()) return;
     if (step < sections.length - 1) setStep(step + 1);
   };
 
   const handleBack = () => {
+    setShowErrors(false);
     if (step > 0) setStep(step - 1);
   };
 
   const handleSignOff = () => {
+    if (!validateCurrentStep()) return;
     const name = currentIntake.answers['ba-name'] || 'Business Analyst';
     performSignOff(name);
   };
@@ -77,6 +91,15 @@ const IntakeForm = () => {
             onChange={(e) => updateAnswer(q.id, e.target.value)}
           />
         );
+      case 'Date':
+        return (
+          <input 
+            type="date" 
+            className={styles.input} 
+            value={currentIntake.answers[q.id] || ''}
+            onChange={(e) => updateAnswer(q.id, e.target.value)}
+          />
+        );
       case 'Dropdown':
         return (
           <select 
@@ -84,11 +107,10 @@ const IntakeForm = () => {
             value={currentIntake.answers[q.id] || ''}
             onChange={(e) => updateAnswer(q.id, e.target.value)}
           >
-            <option value="">Select option...</option>
-            <option value="Standard">Standard</option>
-            <option value="Custom">Custom</option>
-            <option value="Global">Global</option>
-            <option value="Regional">Regional</option>
+            <option value="" disabled>Select option...</option>
+            {q.options && q.options.map((opt, idx) => (
+              <option key={idx} value={opt}>{opt}</option>
+            ))}
           </select>
         );
       case 'Checkbox':
@@ -126,10 +148,19 @@ const IntakeForm = () => {
         
         {currentQuestions.map(q => (
           <div key={q.id} className={styles.questionItem}>
-            <label className={styles.questionLabel}>{q.item}</label>
+            <label className={styles.questionLabel}>
+              {q.item} {q.isRequired && <span style={{ color: 'var(--color-error)' }}>*</span>}
+            </label>
             {q.instruction && <p className={styles.instruction}>{q.instruction}</p>}
             
             {renderInput(q)}
+
+            {/* Required Field Inline Validation */}
+            {showErrors && q.isRequired && !currentIntake.answers[q.id] && (
+              <p style={{ color: 'var(--color-error)', fontSize: '12px', marginTop: '8px', fontWeight: 600 }}>
+                This is a required field.
+              </p>
+            )}
 
             {/* Warning Banner Logic */}
             {q.warningTrigger !== 'None' && currentIntake.answers[q.id] === q.warningTrigger && (

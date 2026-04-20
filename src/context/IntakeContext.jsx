@@ -26,7 +26,7 @@ export const IntakeProvider = ({ children }) => {
   // Questions CRUD
   const addQuestion = (q) => {
     const newId = q.id || `q-${Date.now()}`;
-    setQuestions(prev => [...prev, { ...q, id: newId, version: 1, isActive: true, adminNote: q.adminNote || '' }]);
+    setQuestions(prev => [...prev, { ...q, id: newId, version: 1, isActive: true, adminNote: q.adminNote || '', isRequired: q.isRequired || false, options: q.options || [] }]);
   };
 
   const batchAddQuestions = (newQuestions) => {
@@ -38,7 +38,9 @@ export const IntakeProvider = ({ children }) => {
           ...q,
           id: `q-csv-${Date.now()}-${idx}`,
           version: 1,
-          isActive: true
+          isActive: true,
+          isRequired: q.isRequired || false,
+          options: q.options || []
         }));
       
       return [...prev, ...toAdd];
