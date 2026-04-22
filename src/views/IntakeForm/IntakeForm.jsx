@@ -11,6 +11,7 @@ const IntakeForm = () => {
   const formQuestions = questions.filter(q => q.isActive);
 
   // Determine sections based on active questions
+  const sections = [...new Set(formQuestions.map(q => q.section))];
 
   const currentQuestions = formQuestions.filter(q => q.section === sections[step]);
 
