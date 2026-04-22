@@ -2,62 +2,29 @@ import React, { useState } from 'react';
 import { useIntake } from '../../context/IntakeContext';
 
 const AdminPanel = () => {
-  const { questions, forms, addForm, updateForm, addQuestion, updateQuestion, deleteQuestion, batchAddQuestions } = useIntake();
-  const [activeTab, setActiveTab] = useState('forms'); // 'forms', 'questions', or 'create'
-  const [editingForm, setEditingForm] = useState(null);
+  const { questions, addQuestion, updateQuestion, deleteQuestion, batchAddQuestions, updateQuestionsOrder } = useIntake();
+  const [activeTab, setActiveTab] = useState('questions'); // 'questions' or 'edit_question'
   const [editingQuestion, setEditingQuestion] = useState(null);
   
-  const [formData, setFormData] = useState({ name: '', description: '', questions: [] });
   const [questionData, setQuestionData] = useState({ item: '', section: '', type: 'Checkbox', instruction: '', warningTrigger: '', isRequired: false, options: [] });
 
-  // Filter only active questions for selection
-  const activeQuestions = questions.filter(q => q.isActive);
-  
   // Versions for a specific question ID
   const getLatestVersion = (id) => {
     return questions.filter(q => q.id === id).sort((a, b) => b.version - a.version)[0];
   };
 
-  const handleToggleQuestion = (id) => {
-    setFormData(prev => {
-      const exists = prev.questions.find(q => q.id === id);
-      const latest = getLatestVersion(id);
-      return {
-        ...prev,
-        questions: exists 
-          ? prev.questions.filter(q => q.id !== id) 
-          : [...prev.questions, { id: latest.id, version: latest.version }]
-      };
-    });
-  };
+  const activeLatestQuestions = questions
+    .filter(q => q.isActive && q.version === getLatestVersion(q.id).version)
+    .sort((a, b) => (a.orderIdx || 0) - (b.orderIdx || 0));
 
-  const handleSaveForm = () => {
-    if (!formData.name || formData.questions.length === 0) {
-      alert('Please provide a name and select at least one question.');
-      return;
+  const moveGlobalQuestion = (index, direction) => {
+    const orderIds = activeLatestQuestions.map(q => q.id);
+    if (direction === 'up' && index > 0) {
+      [orderIds[index - 1], orderIds[index]] = [orderIds[index], orderIds[index - 1]];
+    } else if (direction === 'down' && index < orderIds.length - 1) {
+      [orderIds[index + 1], orderIds[index]] = [orderIds[index], orderIds[index + 1]];
     }
-    
-    if (editingForm) {
-      updateForm(editingForm.id, formData);
-    } else {
-      addForm(formData);
-    }
-    
-    setFormData({ name: '', description: '', questions: [] });
-    setEditingForm(null);
-    setActiveTab('forms');
-  };
-
-  const moveQuestion = (index, direction) => {
-    setFormData(prev => {
-      const newQuestions = [...prev.questions];
-      if (direction === 'up' && index > 0) {
-        [newQuestions[index - 1], newQuestions[index]] = [newQuestions[index], newQuestions[index - 1]];
-      } else if (direction === 'down' && index < newQuestions.length - 1) {
-        [newQuestions[index + 1], newQuestions[index]] = [newQuestions[index], newQuestions[index + 1]];
-      }
-      return { ...prev, questions: newQuestions };
-    });
+    updateQuestionsOrder(orderIds);
   };
 
   const handleSaveQuestion = () => {
@@ -87,29 +54,24 @@ const AdminPanel = () => {
       const lines = content.split('\n');
       const parsedQuestions = [];
 
-      // Skip header if it exists
       const startIndex = lines[0].toLowerCase().includes('section') ? 1 : 0;
 
       for (let i = startIndex; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
 
-        // Basic CSV parser for quoted fields
-        const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
         const matches = lines[i].match(/(".*?"|[^",\r\n]*)(?:,|$)/g);
-        
         if (!matches) continue;
 
         const cols = matches.map(m => m.replace(/^"|"|,$/g, '').trim());
-        
         if (cols.length < 2) continue;
 
         parsedQuestions.push({
           section: cols[0] || 'Uncategorized',
           item: cols[1] || 'Untitled Item',
-          type: cols[2]?.includes('[Input') ? 'Input Required' : 'Check',
+          type: cols[2]?.includes('[Input') ? 'Text' : 'Checkbox',
           adminNote: cols[3] || '',
           instruction: cols[4] || '',
-          warningTrigger: cols[2]?.includes('Yes') ? 'Yes' : ''
+          warningTrigger: cols[2]?.includes('Yes') ? 'Yes' : 'None'
         });
       }
 
@@ -119,7 +81,7 @@ const AdminPanel = () => {
       }
     };
     reader.readAsText(file);
-    e.target.value = null; // Reset for next upload
+    e.target.value = null;
   };
 
   return (
@@ -127,64 +89,26 @@ const AdminPanel = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
         <div>
           <h1 style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-primary)' }}>Admin Center</h1>
-          <p style={{ color: 'var(--color-on-surface-variant)', marginTop: '8px' }}>Global configuration and master bank management.</p>
+          <p style={{ color: 'var(--color-on-surface-variant)', marginTop: '8px' }}>Global configuration and master form management.</p>
         </div>
         <div style={{ display: 'flex', backgroundColor: 'var(--color-surface-container-high)', padding: '4px', borderRadius: '8px' }}>
-          {['forms', 'questions'].map(tab => (
-            <button 
-              key={tab}
-              onClick={() => { setActiveTab(tab); setEditingForm(null); setEditingQuestion(null); }}
-              style={{ 
-                padding: '8px 16px', borderRadius: '6px', fontSize: '14px', fontWeight: 600,
-                backgroundColor: activeTab === tab ? 'white' : 'transparent',
-                color: activeTab === tab ? 'var(--color-primary)' : 'var(--color-on-surface-variant)'
-              }}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+          <button 
+            onClick={() => { setActiveTab('questions'); setEditingQuestion(null); }}
+            style={{ 
+              padding: '8px 16px', borderRadius: '6px', fontSize: '14px', fontWeight: 600,
+              backgroundColor: activeTab === 'questions' ? 'white' : 'transparent',
+              color: activeTab === 'questions' ? 'var(--color-primary)' : 'var(--color-on-surface-variant)'
+            }}
+          >
+            Form Configuration
+          </button>
         </div>
       </div>
-
-      {activeTab === 'forms' && (
-        <>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
-            <button 
-              className="btn btnPrimary" 
-              onClick={() => { setFormData({ name: '', description: '', questions: [] }); setEditingForm(null); setActiveTab('create_form'); }}
-              style={{ backgroundColor: 'var(--color-primary)', color: 'white', padding: '10px 20px', borderRadius: '8px', fontWeight: 600 }}
-            >
-              + Create New Form
-            </button>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
-            {forms.map(form => (
-              <div key={form.id} style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', border: '1px solid var(--color-outline)' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>{form.name}</h3>
-                <p style={{ fontSize: '13px', color: 'var(--color-on-surface-variant)', marginBottom: '20px', height: '40px', overflow: 'hidden' }}>
-                  {form.description}
-                </p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-outline)', paddingTop: '16px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-primary)' }}>
-                    {form.questions.length} QUESTIONS
-                  </span>
-                  <button 
-                    style={{ color: 'var(--color-primary)', fontSize: '12px', fontWeight: 700 }}
-                    onClick={() => { setEditingForm(form); setFormData({ ...form }); setActiveTab('create_form'); }}
-                  >
-                    EDIT FORM
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
 
       {activeTab === 'questions' && (
         <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid var(--color-outline)', overflow: 'hidden' }}>
           <div style={{ padding: '24px', borderBottom: '1px solid var(--color-outline)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 700 }}>Master Question Bank</h2>
+            <h2 style={{ fontSize: '18px', fontWeight: 700 }}>Global Intake Form</h2>
             <div style={{ display: 'flex', gap: '12px' }}>
               <label style={{ 
                 backgroundColor: 'var(--color-surface-container-high)', 
@@ -210,146 +134,60 @@ const AdminPanel = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead style={{ backgroundColor: 'var(--color-surface-container-low)', textAlign: 'left', fontSize: '12px' }}>
               <tr>
+                <th style={{ padding: '16px', width: '50px' }}>ORDER</th>
                 <th style={{ padding: '16px' }}>ITEM</th>
                 <th style={{ padding: '16px' }}>SECTION</th>
                 <th style={{ padding: '16px' }}>VERSION</th>
-                <th style={{ padding: '16px' }}>NOTES</th>
                 <th style={{ padding: '16px', textAlign: 'right' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
-              {questions.filter(q => q.isActive || questions.filter(inner => inner.id === q.id && inner.isActive).length === 0).map(q => {
-                const latest = getLatestVersion(q.id);
-                if (q.version !== latest.version) return null; // Only show latest version in bank
-                return (
-                  <tr key={q.id + q.version} style={{ borderBottom: '1px solid var(--color-outline)', fontSize: '14px' }}>
-                    <td style={{ padding: '16px' }}>{q.item}</td>
-                    <td style={{ padding: '16px' }}>{q.section}</td>
-                    <td style={{ padding: '16px' }}>v{q.version}</td>
-                    <td style={{ padding: '16px' }}>
-                      {q.adminNote ? (
-                        <span title={q.adminNote} style={{ cursor: 'help', color: 'var(--color-primary)', fontSize: '12px', fontWeight: 600 }}>
-                          View Note
-                        </span>
-                      ) : '-'}
-                    </td>
-                    <td style={{ padding: '16px', textAlign: 'right' }}>
-                      <button 
-                        style={{ marginRight: '16px', color: 'var(--color-primary)', fontWeight: 600 }}
-                        onClick={() => { setEditingQuestion(q); setQuestionData({ ...q }); setActiveTab('edit_question'); }}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        style={{ color: 'var(--color-error)', fontWeight: 600 }}
-                        onClick={() => deleteQuestion(q.id)}
-                      >
-                        Archive
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {activeTab === 'create_form' && (
-        <div style={{ backgroundColor: 'white', padding: '32px', borderRadius: '16px', border: '1px solid var(--color-outline)' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '24px' }}>{editingForm ? 'Edit Form' : 'Build Custom Form'}</h2>
-          
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Form Name</label>
-            <input 
-              type="text" 
-              className="input"
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-outline)' }}
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-            />
-          </div>
-
-          <div style={{ marginBottom: '32px' }}>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Form Description</label>
-            <textarea 
-              className="textarea"
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-outline)', minHeight: '80px' }}
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-            />
-          </div>
-
-          <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>Select Questions (Master Bank)</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto', paddingRight: '8px', marginBottom: '32px' }}>
-            {activeQuestions.map(q => {
-              const latest = getLatestVersion(q.id);
-              if (q.version !== latest.version) return null;
-              
-              const isSelected = formData.questions.some(fq => fq.id === q.id);
-              const currentVersionInForm = formData.questions.find(fq => fq.id === q.id)?.version;
-              const needsUpgrade = isSelected && currentVersionInForm < latest.version;
-
-              return (
-                <div 
-                  key={q.id} 
-                  style={{ 
-                    display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', 
-                    border: '1px solid var(--color-outline)',
-                    backgroundColor: isSelected ? 'var(--color-surface-container-low)' : 'white'
-                  }}
-                >
-                  <div onClick={() => handleToggleQuestion(q.id)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                    <span className="material-symbols-outlined" style={{ color: isSelected ? 'var(--color-primary)' : 'var(--color-outline)' }}>
-                      {isSelected ? 'check_circle' : 'radio_button_unchecked'}
-                    </span>
-                    <div>
-                      <p style={{ fontSize: '13px', fontWeight: 600 }}>
-                        {q.item} {q.isRequired && <span style={{ color: 'var(--color-error)' }}>*</span>}
-                      </p>
-                      <p style={{ fontSize: '10px', color: 'var(--color-on-surface-variant)' }}>v{currentVersionInForm || q.version} • {q.section}</p>
-                    </div>
-                  </div>
-                  
-                  {isSelected && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {activeLatestQuestions.map((q, index) => (
+                <tr key={q.id + q.version} style={{ borderBottom: '1px solid var(--color-outline)', fontSize: '14px' }}>
+                  <td style={{ padding: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                       <span 
                         className="material-symbols-outlined" 
                         style={{ fontSize: '16px', cursor: 'pointer', color: 'var(--color-on-surface-variant)' }}
-                        onClick={(e) => { e.stopPropagation(); moveQuestion(formData.questions.findIndex(fq => fq.id === q.id), 'up'); }}
+                        onClick={() => moveGlobalQuestion(index, 'up')}
                       >
                         keyboard_arrow_up
+                      </span>
+                      <span style={{ fontSize: '10px', color: 'var(--color-on-surface-variant)', fontWeight: 700 }}>
+                        {index + 1}
                       </span>
                       <span 
                         className="material-symbols-outlined" 
                         style={{ fontSize: '16px', cursor: 'pointer', color: 'var(--color-on-surface-variant)' }}
-                        onClick={(e) => { e.stopPropagation(); moveQuestion(formData.questions.findIndex(fq => fq.id === q.id), 'down'); }}
+                        onClick={() => moveGlobalQuestion(index, 'down')}
                       >
                         keyboard_arrow_down
                       </span>
                     </div>
-                  )}
-
-                  {needsUpgrade && (
+                  </td>
+                  <td style={{ padding: '16px', fontWeight: 600 }}>
+                    {q.item} {q.isRequired && <span style={{ color: 'var(--color-error)' }}>*</span>}
+                  </td>
+                  <td style={{ padding: '16px' }}>{q.section}</td>
+                  <td style={{ padding: '16px' }}>v{q.version}</td>
+                  <td style={{ padding: '16px', textAlign: 'right' }}>
                     <button 
-                      onClick={() => setFormData(prev => ({
-                        ...prev,
-                        questions: prev.questions.map(fq => fq.id === q.id ? { id: q.id, version: latest.version } : fq)
-                      }))}
-                      style={{ fontSize: '10px', backgroundColor: 'var(--color-warning)', padding: '4px 8px', borderRadius: '4px', fontWeight: 700 }}
+                      style={{ marginRight: '16px', color: 'var(--color-primary)', fontWeight: 600 }}
+                      onClick={() => { setEditingQuestion(q); setQuestionData({ ...q }); setActiveTab('edit_question'); }}
                     >
-                      UPGRADE TO v{latest.version}
+                      Edit
                     </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <button onClick={handleSaveForm} style={{ flex: 1, backgroundColor: 'var(--color-primary)', color: 'white', padding: '14px', borderRadius: '8px', fontWeight: 700 }}>Save Changes</button>
-            <button onClick={() => setActiveTab('forms')} style={{ flex: 1, backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)', padding: '14px', borderRadius: '8px', fontWeight: 700 }}>Cancel</button>
-          </div>
+                    <button 
+                      style={{ color: 'var(--color-error)', fontWeight: 600 }}
+                      onClick={() => deleteQuestion(q.id)}
+                    >
+                      Archive
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

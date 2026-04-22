@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { checklistSeed, initialForms } from '../data/mockData';
+import { checklistSeed } from '../data/mockData';
 
 const IntakeContext = createContext();
 
@@ -7,7 +7,7 @@ export const useIntake = () => useContext(IntakeContext);
 
 export const IntakeProvider = ({ children }) => {
   const [currentIntake, setCurrentIntake] = useState({
-    formId: null,
+    submissionId: `sub-${Date.now()}`,
     answers: {},
     descriptions: {},
     signOff: { name: '', timestamp: null },
@@ -16,17 +16,19 @@ export const IntakeProvider = ({ children }) => {
   });
 
   const [questions, setQuestions] = useState([]);
-  const [forms, setForms] = useState([]);
 
   useEffect(() => {
-    setQuestions(checklistSeed);
-    setForms(initialForms);
+    // Sort by orderIdx
+    setQuestions(checklistSeed.sort((a, b) => (a.orderIdx || 0) - (b.orderIdx || 0)));
   }, []);
 
   // Questions CRUD
   const addQuestion = (q) => {
     const newId = q.id || `q-${Date.now()}`;
-    setQuestions(prev => [...prev, { ...q, id: newId, version: 1, isActive: true, adminNote: q.adminNote || '', isRequired: q.isRequired || false, options: q.options || [] }]);
+    setQuestions(prev => [...prev, { 
+      ...q, id: newId, version: 1, isActive: true, adminNote: q.adminNote || '', 
+      isRequired: q.isRequired || false, options: q.options || [], orderIdx: prev.length 
+    }]);
   };
 
   const batchAddQuestions = (newQuestions) => {
@@ -40,7 +42,8 @@ export const IntakeProvider = ({ children }) => {
           version: 1,
           isActive: true,
           isRequired: q.isRequired || false,
-          options: q.options || []
+          options: q.options || [],
+          orderIdx: prev.length + idx
         }));
       
       return [...prev, ...toAdd];
@@ -70,23 +73,16 @@ export const IntakeProvider = ({ children }) => {
     setQuestions(prev => prev.map(q => q.id === id ? { ...q, isActive: false } : q));
   };
 
-  // Forms CRUD
-  const selectForm = (formId) => {
-    setCurrentIntake(prev => ({
-      ...prev,
-      formId,
-      answers: {},
-      descriptions: {},
-      currentStep: 0
-    }));
-  };
-
-  const addForm = (newForm) => {
-    setForms(prev => [...prev, { ...newForm, id: `form-${Date.now()}` }]);
-  };
-
-  const updateForm = (id, updatedForm) => {
-    setForms(prev => prev.map(f => f.id === id ? { ...f, ...updatedForm } : f));
+  const updateQuestionsOrder = (orderedIds) => {
+    setQuestions(prev => {
+      return prev.map(q => {
+        const newOrder = orderedIds.indexOf(q.id);
+        if (newOrder !== -1) {
+          return { ...q, orderIdx: newOrder };
+        }
+        return q;
+      }).sort((a, b) => (a.orderIdx || 0) - (b.orderIdx || 0));
+    });
   };
 
   const updateAnswer = (questionId, value) => {
@@ -97,12 +93,34 @@ export const IntakeProvider = ({ children }) => {
   };
 
   const performSignOff = (name) => {
+    const timestamp = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
+    
+    // Simulate Domo AppDB EAV Submission
+    const headerRecord = {
+      id: currentIntake.submissionId,
+      baName: name,
+      timestamp: timestamp,
+      status: 'Completed'
+    };
+
+    const answerRecords = Object.keys(currentIntake.answers).map((qId) => {
+      const qInfo = questions.find(q => q.id === qId);
+      return {
+        id: `ans-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        submissionId: currentIntake.submissionId,
+        questionId: qId,
+        questionVersion: qInfo ? qInfo.version : 1,
+        answerValue: currentIntake.answers[qId]
+      };
+    });
+
+    console.log("DOMO APPDB MOCK SUBMISSION (EAV FORMAT): ");
+    console.log("Intake_Headers Collection:", [headerRecord]);
+    console.log("Intake_Answers Collection:", answerRecords);
+
     setCurrentIntake(prev => ({
       ...prev,
-      signOff: {
-        name,
-        timestamp: new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date())
-      },
+      signOff: { name, timestamp },
       status: 'Completed'
     }));
   };
@@ -111,13 +129,11 @@ export const IntakeProvider = ({ children }) => {
     <IntakeContext.Provider value={{ 
       currentIntake, 
       questions, 
-      forms,
       addQuestion,
+      batchAddQuestions,
       updateQuestion,
       deleteQuestion,
-      selectForm,
-      addForm,
-      updateForm,
+      updateQuestionsOrder,
       updateAnswer, 
       performSignOff,
       setCurrentIntake

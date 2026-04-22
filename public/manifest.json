@@ -24,14 +24,27 @@
       }
     },
     {
-      "name": "Config_Forms",
+      "name": "Intake_Headers",
       "syncEnabled": true,
       "schema": {
         "columns": [
           { "name": "id", "type": "STRING" },
-          { "name": "name", "type": "STRING" },
-          { "name": "description", "type": "STRING" },
-          { "name": "questions", "type": "STRING" } 
+          { "name": "baName", "type": "STRING" },
+          { "name": "timestamp", "type": "STRING" },
+          { "name": "status", "type": "STRING" }
+        ]
+      }
+    },
+    {
+      "name": "Intake_Answers",
+      "syncEnabled": true,
+      "schema": {
+        "columns": [
+          { "name": "id", "type": "STRING" },
+          { "name": "submissionId", "type": "STRING" },
+          { "name": "questionId", "type": "STRING" },
+          { "name": "questionVersion", "type": "DOUBLE" },
+          { "name": "answerValue", "type": "STRING" }
         ]
       }
     }

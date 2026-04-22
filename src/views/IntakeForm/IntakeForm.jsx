@@ -3,44 +3,15 @@ import styles from './IntakeForm.module.css';
 import { useIntake } from '../../context/IntakeContext';
 
 const IntakeForm = () => {
-  const { questions, forms, currentIntake, selectForm, updateAnswer, performSignOff } = useIntake();
+  const { questions, currentIntake, updateAnswer, performSignOff } = useIntake();
   const [step, setStep] = useState(0);
   const [showErrors, setShowErrors] = useState(false);
 
-  // If no form is selected, show the selection dropdown
-  if (!currentIntake.formId) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <h2 className={styles.sectionTitle}>Start New Intake</h2>
-          <p className={styles.instruction} style={{ borderLeft: 'none', paddingLeft: 0, marginBottom: '24px' }}>
-            Please select the appropriate intake form to begin the process.
-          </p>
-          
-          <div className={styles.questionItem}>
-            <label className={styles.questionLabel}>Intake Type</label>
-            <select 
-              className={styles.input}
-              onChange={(e) => selectForm(e.target.value)}
-              defaultValue=""
-            >
-              <option value="" disabled>Choose a form...</option>
-              {forms.map(f => (
-                <option key={f.id} value={f.id}>{f.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Directly load all active questions from the Master Bank
+  const formQuestions = questions.filter(q => q.isActive);
 
-  const selectedForm = forms.find(f => f.id === currentIntake.formId);
-  const formQuestions = selectedForm.questions.map(fq => {
-    return questions.find(q => q.id === fq.id && q.version === fq.version);
-  }).filter(Boolean);
+  // Determine sections based on active questions
 
-  const sections = [...new Set(formQuestions.map(q => q.section))];
   const currentQuestions = formQuestions.filter(q => q.section === sections[step]);
 
   const validateCurrentStep = () => {
@@ -143,7 +114,7 @@ const IntakeForm = () => {
       <div className={styles.card}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h2 className={styles.sectionTitle}>{sections[step]}</h2>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-primary)' }}>FORM: {selectedForm.name}</span>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-primary)' }}>GLOBAL INTAKE</span>
         </div>
         
         {currentQuestions.map(q => (
