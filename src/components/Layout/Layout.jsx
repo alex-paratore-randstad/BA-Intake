@@ -1,12 +1,7 @@
 import React from 'react';
 import styles from './Layout.module.css';
 
-const Sidebar = ({ currentView, setView }) => {
-  const menuItems = [
-    { id: 'intake', icon: 'assignment_add', label: 'Active Intake' },
-    { id: 'admin', icon: 'admin_panel_settings', label: 'Admin Panel' },
-  ];
-
+const Sidebar = () => {
   return (
     <aside className={styles.sidebar}>
       <div>
@@ -15,19 +10,13 @@ const Sidebar = ({ currentView, setView }) => {
       </div>
       
       <nav className={styles.nav}>
-        {menuItems.map(item => (
-          <button
-            key={item.id}
-            className={`${styles.navItem} ${currentView === item.id ? styles.navItemActive : ''}`}
-            onClick={() => setView(item.id)}
-          >
-            <span className="material-symbols-outlined">{item.icon}</span>
-            {item.label}
+          <button className={`${styles.navItem} ${styles.navItemActive}`}>
+            <span className="material-symbols-outlined">assignment_add</span>
+            Active Intake
           </button>
-        ))}
       </nav>
       
-      <button className={styles.startBtn} onClick={() => setView('intake')}>
+      <button className={styles.startBtn} onClick={() => window.location.reload()}>
         <span className="material-symbols-outlined">add</span>
         Start New Intake
       </button>
@@ -60,10 +49,10 @@ const TopBar = () => {
   );
 };
 
-const Layout = ({ children, currentView, setView }) => {
+const Layout = ({ children }) => {
   return (
     <div className={styles.container}>
-      <Sidebar currentView={currentView} setView={setView} />
+      <Sidebar />
       <div className={styles.main}>
         <TopBar />
         <main style={{ padding: '40px' }}>

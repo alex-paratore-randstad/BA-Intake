@@ -1,16 +1,29 @@
 {
   "name": "BA Intake Portal",
   "version": "1.0.0",
-  "description": "Business Analysis Intake Portal for Analytical Atelier",
+  "description": "Business Analysis Intake Portal",
   "id": "ba-intake-portal",
   "proxyId": "ba-intake-portal-proxy",
   "collections": [
+    {
+      "name": "Config_Forms",
+      "syncEnabled": true,
+      "schema": {
+        "columns": [
+          { "name": "id", "type": "STRING" },
+          { "name": "name", "type": "STRING" },
+          { "name": "description", "type": "STRING" },
+          { "name": "isActive", "type": "BOOLEAN" }
+        ]
+      }
+    },
     {
       "name": "Config_Questions",
       "syncEnabled": true,
       "schema": {
         "columns": [
           { "name": "id", "type": "STRING" },
+          { "name": "formId", "type": "STRING" },
           { "name": "version", "type": "LONG" },
           { "name": "section", "type": "STRING" },
           { "name": "item", "type": "STRING" },
@@ -29,6 +42,8 @@
       "schema": {
         "columns": [
           { "name": "id", "type": "STRING" },
+          { "name": "formId", "type": "STRING" },
+          { "name": "userId", "type": "STRING" },
           { "name": "baName", "type": "STRING" },
           { "name": "timestamp", "type": "STRING" },
           { "name": "status", "type": "STRING" }
@@ -40,11 +55,30 @@
       "syncEnabled": true,
       "schema": {
         "columns": [
-          { "name": "id", "type": "STRING" },
-          { "name": "submissionId", "type": "STRING" },
-          { "name": "questionId", "type": "STRING" },
-          { "name": "questionVersion", "type": "DOUBLE" },
-          { "name": "answerValue", "type": "STRING" }
+          {
+            "name": "id",
+            "type": "STRING"
+          },
+          {
+            "name": "submissionId",
+            "type": "STRING"
+          },
+          {
+            "name": "questionId",
+            "type": "STRING"
+          },
+          {
+            "name": "questionVersion",
+            "type": "DOUBLE"
+          },
+          {
+            "name": "answerValue",
+            "type": "STRING"
+          },
+          {
+            "name": "description",
+            "type": "STRING"
+          }
         ]
       }
     }
