@@ -13,6 +13,10 @@ const IntakeForm = () => {
   // Determine sections based on active questions
   const sections = [...new Set(formQuestions.map(q => q.section))];
 
+  if (sections.length === 0) {
+    return <div style={{ padding: '40px', textAlign: 'center' }}>Loading form configuration...</div>;
+  }
+
   const currentQuestions = formQuestions.filter(q => q.section === sections[step]);
 
   const validateCurrentStep = () => {
